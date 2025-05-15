@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import {
   Stack,
@@ -21,6 +21,7 @@ export default function App ({ datas }) {
   const [input, setInput] = useState('')
   const [todoError, setTodoError] = useState(false)
   const [listError, setListError] = useState(false)
+  const [listInputBoxActive, setListInputBoxActive] = useState(false)
 
   const [open, setOpen] = useState({})
   const [todoOpen, setTodoOpen] = useState({})
@@ -29,6 +30,7 @@ export default function App ({ datas }) {
   const [textList, setTextList] = useState([])
 
   const apiListsUrl = '/apis/todolists/lists/'
+  const inputRef = useRef([])
 
   const genError = (error) => console.error(`Error ${error}`)
 
@@ -162,6 +164,7 @@ export default function App ({ datas }) {
         setTodoOpen({ ...todoOpen, [id]: !todoOpen[id] })
         // setTextList([])
       }
+      // setIsFocused(() => false)
     } else {
       setListParentId(id)
       // find if any other elements are open and if they are close them
@@ -265,18 +268,19 @@ export default function App ({ datas }) {
                         </ListGroup.Item>
                         :
                         <InputGroup className='mb-3' id={'todo-' + item.id}>
-                        <Form.Control
-                            type='text'
-                            value={editValue || item.text}
-                            onChange={editInputChange}
-                            onKeyDown={handleKeyDown}
-                        />
-                        <Button variant='outline-secondary' id={'edit-' + item.id} onClick={submitEdit}>Submit</Button>
+                          <Form.Control
+                              type='text'
+                              value={editValue || item.text}
+                              onChange={editInputChange}
+                              onKeyDown={handleKeyDown}
+                              aria-label='todo-edit-input-box'
+                          />
+                          <Button variant='outline-secondary' id={'edit-' + item.id} onClick={submitEdit}>Submit</Button>
                         </InputGroup>
                     }
                     <Collapse in={todoOpen['todo-' + item.id]} id={'collapse-todo-' + item.id}>
                         <div>
-                        <Button variant='secondary' onClick={editTodo} style={{ padding: '1px' }} id={item.id}>Edit</Button>
+                        <Button variant='secondary' onClick={editTodo} style={{ padding: '1px' }} id={item.id} aria-label='todo-edit-button'>Edit</Button>
                         <Button variant='danger' onClick={deleteTodo} style={{ padding: '1px' }}>Delete Todo</Button>
                         </div>
                     </Collapse>
@@ -290,17 +294,18 @@ export default function App ({ datas }) {
     )
   }
 
+
   const CustomTodoForm = ({ id }) => {
-    const [todoText, setTodoText] = useState({})
     const [itemId, setItemId] = useState('')
+    const [todoText, setTodoText] = useState({})
 
     const onTodoTextChange = (e) => {
       const itemId = e.target.attributes.itemid.value
       setItemId(itemId)
       const updateValue = { [itemId]: e.target.value }
+      console.log('todo text: ', updateValue)
       setTodoText({ ...todoText, ...updateValue })
     }
-
     const handleKeyDown = (e) => {
       if (e.key === 'Enter') {
         createNewTodo()
@@ -336,40 +341,42 @@ export default function App ({ datas }) {
     }
 
     return (
-      <InputGroup className='mb-4' id={id}>
-        <Form.Control
-          itemID={id}
-          placeholder='Add New Todo'
-          aria-label='todo input with button'
-          aria-describedby='basic-addon3'
-          type='text'
-          value={todoText[id] || ''}
-          onChange={onTodoTextChange}
-          onKeyDown={handleKeyDown}
-        />
-        <Button
-          variant='outline-secondary'
-          id='button-addon3'
-          onClick={createNewTodo}
-        >
-          Create New Todo
-        </Button>
-        <Alert
-          show={todoError}
-          variant='danger'
-          onClose={() => setTodoError(false)}
-          dismissible
-          className='mt-1 w-75'
-        >
-          <Alert.Heading></Alert.Heading>
-          <p>Can not be empty. Please fill input to create todo.</p>
-        </Alert>
-        <Container>
-          <div id='display-todo'>
-            <TodoListComponent key={id} textList={textList} id={id} />
-          </div>
-        </Container>
-      </InputGroup>
+      <>
+        <InputGroup className='mb-4' id={id}>
+          <Form.Control
+            itemID={id}
+            placeholder='Add New Todo'
+            aria-label='todo input with button'
+            aria-describedby='basic-addon3'
+            type='text'
+            value={todoText[id] || new String('')}
+            onChange={onTodoTextChange}
+            onKeyDown={handleKeyDown}
+          />
+          <Button
+            variant='outline-secondary'
+            id='button-addon3'
+            onClick={createNewTodo}
+          >
+            Create New Todo
+          </Button>
+          <Alert
+            show={todoError}
+            variant='danger'
+            onClose={() => setTodoError(false)}
+            dismissible
+            className='mt-1 w-75'
+          >
+            <Alert.Heading></Alert.Heading>
+            <p>Can not be empty. Please fill input to create todo.</p>
+          </Alert>
+          <Container>
+            <div id='display-todo'>
+              <TodoListComponent key={id} textList={textList} id={id} />
+            </div>
+          </Container>
+        </InputGroup>
+      </>
     )
   }
 
@@ -434,7 +441,7 @@ export default function App ({ datas }) {
     return (
       <ListGroup style={{ width: '22rem' }}>
         {data.map((item) => (
-          <Container key={item.id}>
+          <Container key={'container'+item.id}>
             {
               (!showEdit[item.id]) ?
               <ListGroup.Item
@@ -448,14 +455,15 @@ export default function App ({ datas }) {
                   {item.title}
                 </ListGroup.Item>
               :
-              <InputGroup className='mb-3' id={'list-' + item.id}>
+              <InputGroup className='mb-3' id={'list-' + item.id} key={'edit'+ item.id}>
                   <Form.Control
+                    key={'eb-'+item.id}
                     type='text'
                     value={editValue || item.text}
                     onChange={editInputChange}
                     onKeyDown={handleKeyDown}
                   />
-                  <Button variant='outline-secondary' id={'edit-' + item.id} onClick={submitEdit}>Submit</Button>
+                  <Button variant='outline-secondary' id={'edit-' + item.id} onClick={submitEdit} key={'button-'+item.id}>Submit</Button>
                 </InputGroup>
             }
             <Collapse in={open[item.id]} id={'collapse-' + item.id}>
@@ -501,7 +509,7 @@ export default function App ({ datas }) {
           console.log('submitted new list\n', res)
         })
         .catch((error) => {
-          setListError((lE) => !lE)
+          setListError(() => true)
           console.log('list error...', listError)
           console.error(error)
         })
@@ -512,6 +520,10 @@ export default function App ({ datas }) {
 
   const inputChange = (e) => {
     setInput(e.target.value)
+    setListInputBoxActive(() => {
+      console.log('setting list input box active to true')
+      return true
+    })
   }
 
   return (
@@ -521,8 +533,7 @@ export default function App ({ datas }) {
         <InputGroup className='mb-3'>
           <Form.Control
             placeholder='Create a new list (Can press Enter to submit)'
-            aria-label='Example text with button addon'
-            aria-describedby='basic-addon1'
+            aria-label='list-input-box'
             type='text'
             value={input}
             onChange={inputChange}
