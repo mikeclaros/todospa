@@ -302,13 +302,10 @@ class TestFrontPositive:
         self._create_open_todo(page)
 
         # edit todo
-        todo_edit_button_locator = self._get_edit_button_locator(page, "Edit")
+        todo_edit_button_locator = page.get_by_role("button", name="todo-edit-button")
+        todo_edit_button_locator.click()
+        time.sleep(2)
 
-        self._wait_on(todo_edit_button_locator)
-        self._retry_click(
-            clickable=todo_edit_button_locator,
-            expected_element=page.locator(f'//input[@value="{self.todo}"]'),
-        )
         expect(page.locator("input").all()[2]).to_have_value(self.todo)
 
     def test_able_to_edit_todo(self, frontend):
@@ -317,13 +314,10 @@ class TestFrontPositive:
         self._create_open_todo(page)
 
         # edit todo
-        todo_edit_button_locator = self._get_edit_button_locator(page, "Edit")
-        self._wait_on(todo_edit_button_locator)
-        self._retry_click(
-            clickable=todo_edit_button_locator,
-            expected_element=page.locator(f'//input[@value="{self.todo}"]'),
-        )
-        page.locator(f'//input[@value="{self.todo}"]').fill(
+        todo_edit_button_locator = page.get_by_role("button", name="todo-edit-button")
+        todo_edit_button_locator.wait_for(state="visible", timeout=self.DEFAULT_TIMEOUT)
+        todo_edit_button_locator.click()
+        page.get_by_role("textbox", name="todo-edit-input-box").fill(
             self.todo_edit, timeout=self.DEFAULT_TIMEOUT
         )
         page.get_by_role("button", name="Submit").click()
@@ -366,4 +360,18 @@ class TestFrontPositive:
         page.get_by_role("button", name="Create New Todo").click()
         alert_message = "Can not be empty. Please fill input to create todo."
 
+        expect(page.get_by_role("alert")).to_have_text(alert_message)
+
+    LIST_INPUT_ARIA = "list-input-box"
+
+    def test_error_message_displayed_is_not_toggled(self, frontend):
+        page: Page = frontend.page
+        list_input_loc = page.get_by_role("textbox", name=self.LIST_INPUT_ARIA)
+        list_input_loc.fill("")
+        alert_message = "Can not be empty. Please fill input to create title."
+
+        page.get_by_role("button", name="Create New List").click()
+        time.sleep(1)
+        page.get_by_role("button", name="Create New List").click()
+        time.sleep(1)
         expect(page.get_by_role("alert")).to_have_text(alert_message)
